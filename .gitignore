@@ -1,0 +1,8 @@
+# Harbor parity artifacts
+benchmark/harbor_parity/outputs/
+benchmark/harbor_parity/workspaces/
+benchmark/harbor_parity/logs/
+.env
+*.env
+__pycache__/
+*.py[cod]
