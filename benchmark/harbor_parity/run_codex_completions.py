@@ -224,6 +224,8 @@ base_url = os.environ.get("OPENAI_BASE_URL")
 if base_url:
     (home / "config.toml").write_text(f"openai_base_url = {{json.dumps(base_url)}}\n", encoding="utf-8")
 PY_SETUP
+prompt="$(cat /workspace/prompt.md; printf __CANITEDIT_PROMPT_END__)"
+prompt="${prompt%__CANITEDIT_PROMPT_END__}"
 set +e
 codex exec \
   --dangerously-bypass-approvals-and-sandbox \
@@ -233,7 +235,7 @@ codex exec \
   --enable unified_exec \
   -c model_reasoning_effort={args.reasoning_effort} \
   -c model_reasoning_summary={args.reasoning_summary} \
-  - < /workspace/prompt.md 2>&1 | tee /logs/codex.jsonl
+  -- "$prompt" 2>&1 </dev/null | tee /logs/codex.jsonl
 status=${{PIPESTATUS[0]}}
 set -e
 rm -f "$CODEX_HOME/auth.json" "$CODEX_HOME/config.toml"

@@ -29,7 +29,7 @@ codex exec \
   --enable unified_exec \
   -c model_reasoning_effort=low \
   -c model_reasoning_summary=none \
-  - < /workspace/prompt.md
+  -- "$(cat /workspace/prompt.md)"
 ```
 
 The prompt text must match the Harbor adapter prompt.
