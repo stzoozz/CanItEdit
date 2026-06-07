@@ -11,8 +11,6 @@ RUN apt-get update \
         curl \
         git \
         ripgrep \
-    && curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
-    && apt-get install -y --no-install-recommends nodejs \
     && rm -rf /var/lib/apt/lists/*
 
 # Match the useful CanItEdit Python dependencies without installing heavyweight vLLM.
@@ -48,7 +46,14 @@ pkg.mkdir(parents=True, exist_ok=True)
 )
 PY
 
-RUN npm install -g "@openai/codex@${CODEX_VERSION}" \
+RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.2/install.sh | bash \
+    && export NVM_DIR="$HOME/.nvm" \
+    && . "$NVM_DIR/nvm.sh" \
+    && nvm install 22 \
+    && nvm alias default 22 \
+    && npm install -g "@openai/codex@${CODEX_VERSION}" \
+    && ln -sf "$(which node)" /usr/local/bin/node \
+    && ln -sf "$(which codex)" /usr/local/bin/codex \
     && codex --version
 
 WORKDIR /workspace

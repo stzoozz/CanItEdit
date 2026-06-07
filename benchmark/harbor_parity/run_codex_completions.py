@@ -3,6 +3,8 @@
 # requires-python = ">=3.10"
 # dependencies = [
 #     "datasets==4.0.*",
+#     "litellm",
+#     "tqdm",
 # ]
 # ///
 """Run Harbor-style Codex parity completions for CanItEdit.
@@ -17,6 +19,7 @@ from __future__ import annotations
 
 import argparse
 import gzip
+import importlib.util
 import json
 import os
 import re
@@ -49,20 +52,11 @@ DEFAULT_MAX_TOKENS = 3072
 InstructionKind = Literal["instruction_descriptive", "instruction_lazy"]
 
 
-PROMPT_TEMPLATE = """You need to edit a Python file.
+CODEX_WRITEBACK_TEMPLATE = """The following is the original CanItEdit direct-edit prompt. In the original benchmark, the model returns the edited code after `## Code After:`.
 
-The file /workspace/solution.py contains the current code. Modify that file so it satisfies the edit request below.
+For this Codex parity run, apply the same edit by writing the final edited Python code to `/workspace/solution.py` instead of returning it in chat. Do not create a different answer file.
 
-Do not create a different final answer file. Do not modify or look up benchmark tests, reference solutions, or external benchmark data. When you are done, the complete edited Python program must be in /workspace/solution.py.
-
-## Code Before
-```python
-{before}
-```
-
-## Edit Instruction
-{instruction}
-"""
+{official_prompt}"""
 
 
 @dataclass(frozen=True)
@@ -144,8 +138,29 @@ def load_task_items(args: argparse.Namespace) -> list[TaskItem]:
     return items
 
 
-def build_prompt(item: TaskItem) -> str:
-    return PROMPT_TEMPLATE.format(before=item.before.rstrip(), instruction=item.instruction.strip())
+def load_official_direct_model_class() -> type:
+    official_path = Path(__file__).resolve().parents[1] / "generate_completions.py"
+    spec = importlib.util.spec_from_file_location("canitedit_generate_completions", official_path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"Could not load official CanItEdit generator from {official_path}")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module.DirectEditModel
+
+
+def build_official_prompt(item: TaskItem) -> str:
+    # Intentionally delegates to the official CanItEdit prompt builder instead of
+    # reimplementing its template. This preserves upstream prompt/config semantics.
+    direct_model_cls = load_official_direct_model_class()
+    return direct_model_cls(model_name="codex-parity-placeholder", one_shot=False).format_prompt(
+        item.before,
+        item.instruction,
+    )
+
+
+def build_codex_instruction(item: TaskItem) -> str:
+    return CODEX_WRITEBACK_TEMPLATE.format(official_prompt=build_official_prompt(item))
 
 
 def run_command(
@@ -272,7 +287,7 @@ def run_codex_for_item(
     task_logs_dir.mkdir(parents=True, exist_ok=True)
 
     (task_work_dir / "solution.py").write_text(item.before, encoding="utf-8")
-    (task_work_dir / "prompt.md").write_text(build_prompt(item), encoding="utf-8")
+    (task_work_dir / "prompt.md").write_text(build_codex_instruction(item), encoding="utf-8")
 
     container_name = f"canitedit-parity-{item.safe_name[:48]}-{uuid.uuid4().hex[:8]}"
     command = [
