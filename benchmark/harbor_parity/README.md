@@ -119,6 +119,3 @@ python benchmark/harbor_parity/collect_scores.py \
 
 The summary reports `accuracy_percent = resolved / total * 100`. Use the three original-side run scores and the three Harbor-side run scores to report mean ± sample SEM and check run-range overlap.
 
-## Artifact policy
-
-Do not commit generated outputs, logs, traces, workspaces, or API keys. Keep run artifacts locally and upload them separately to the Harbor parity experiments dataset when the Harbor adapter PR is ready.
