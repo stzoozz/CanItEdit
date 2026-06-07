@@ -239,7 +239,7 @@ home.mkdir(parents=True, exist_ok=True)
 (home / "auth.json").write_text(json.dumps({{"OPENAI_API_KEY": os.environ.get("OPENAI_API_KEY", "")}}), encoding="utf-8")
 base_url = os.environ.get("OPENAI_BASE_URL")
 if base_url:
-    (home / "config.toml").write_text(f"openai_base_url = {{json.dumps(base_url)}}\n", encoding="utf-8")
+    (home / "config.toml").write_text(f"openai_base_url = {{json.dumps(base_url)}}\\n", encoding="utf-8")
 PY_SETUP
 prompt="$1"
 set +e
@@ -315,7 +315,7 @@ def run_codex_for_item(
     started = time.time()
     timed_out = False
     try:
-        result = run_command(command, timeout=args.timeout_sec + 90)
+        result = run_command(command, timeout=args.timeout_sec)
     except subprocess.TimeoutExpired:
         timed_out = True
         subprocess.run(
@@ -332,6 +332,12 @@ def run_codex_for_item(
 
     (task_logs_dir / "docker_stdout.txt").write_text(result.stdout or "", encoding="utf-8")
     (task_logs_dir / "docker_stderr.txt").write_text(result.stderr or "", encoding="utf-8")
+
+    if result.returncode != 0 and not args.allow_agent_failures:
+        raise RuntimeError(
+            f"Codex exited with code {result.returncode} for {item.safe_name}. "
+            f"Logs are in {task_logs_dir}. Pass --allow-agent-failures only for debugging."
+        )
 
     payload = dict(item.example)
     payload.update(
@@ -423,6 +429,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--max-tokens", type=int, default=DEFAULT_MAX_TOKENS)
     parser.add_argument("--overwrite", action="store_true")
     parser.add_argument("--keep-workspaces", action="store_true")
+    parser.add_argument(
+        "--allow-agent-failures",
+        action="store_true",
+        help="Write completion files even when Codex exits non-zero; use only for debugging.",
+    )
     parser.add_argument("--allow-version-mismatch", action="store_true")
     parser.add_argument("--dry-run", action="store_true", help="List selected tasks without running Codex")
     args = parser.parse_args(argv)
