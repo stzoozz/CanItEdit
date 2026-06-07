@@ -30,6 +30,7 @@ import tempfile
 import time
 import uuid
 from dataclasses import dataclass
+from functools import cache
 from pathlib import Path
 from typing import Any, Iterable, Literal
 
@@ -138,6 +139,7 @@ def load_task_items(args: argparse.Namespace) -> list[TaskItem]:
     return items
 
 
+@cache
 def load_official_direct_model_class() -> type:
     official_path = Path(__file__).resolve().parents[1] / "generate_completions.py"
     spec = importlib.util.spec_from_file_location("canitedit_generate_completions", official_path)
@@ -239,8 +241,7 @@ base_url = os.environ.get("OPENAI_BASE_URL")
 if base_url:
     (home / "config.toml").write_text(f"openai_base_url = {{json.dumps(base_url)}}\n", encoding="utf-8")
 PY_SETUP
-prompt="$(cat /workspace/prompt.md; printf __CANITEDIT_PROMPT_END__)"
-prompt="${prompt%__CANITEDIT_PROMPT_END__}"
+prompt="$1"
 set +e
 codex exec \
   --dangerously-bypass-approvals-and-sandbox \
@@ -287,7 +288,7 @@ def run_codex_for_item(
     task_logs_dir.mkdir(parents=True, exist_ok=True)
 
     (task_work_dir / "solution.py").write_text(item.before, encoding="utf-8")
-    (task_work_dir / "prompt.md").write_text(build_codex_instruction(item), encoding="utf-8")
+    codex_instruction = build_codex_instruction(item)
 
     container_name = f"canitedit-parity-{item.safe_name[:48]}-{uuid.uuid4().hex[:8]}"
     command = [
@@ -307,6 +308,8 @@ def run_codex_for_item(
         "bash",
         "-lc",
         codex_shell_script(args),
+        "canitedit-codex",
+        codex_instruction,
     ]
 
     started = time.time()

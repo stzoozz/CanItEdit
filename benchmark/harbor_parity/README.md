@@ -29,7 +29,7 @@ codex exec \
   --enable unified_exec \
   -c model_reasoning_effort=low \
   -c model_reasoning_summary=none \
-  -- "$(cat /workspace/prompt.md)"
+  -- "<official-direct-prompt-plus-writeback-wrapper>"
 ```
 
 The inner CanItEdit prompt is the original direct-edit prompt from `benchmark/generate_completions.py` (`DirectEditModel.format_prompt`). The only Codex-specific addition is a writeback wrapper that tells the agent to put the edited code in `/workspace/solution.py` instead of returning it in chat. The complete Codex instruction must match the Harbor adapter instruction.
@@ -39,7 +39,8 @@ The inner CanItEdit prompt is the original direct-edit prompt from `benchmark/ge
 For each task, `run_codex_completions.py` creates a clean Docker workspace containing only:
 
 - `/workspace/solution.py` — initialized to the CanItEdit `before` code
-- `/workspace/prompt.md` — the original CanItEdit direct-edit prompt plus the minimal Codex writeback wrapper
+
+The Codex instruction is passed as the `codex exec -- <instruction>` argument, matching Harbor's Codex invocation. No prompt file is placed in `/workspace`.
 
 The agent container does **not** receive:
 
