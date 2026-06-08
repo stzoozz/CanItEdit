@@ -46,9 +46,6 @@ DEFAULT_REASONING_EFFORT = "low"
 DEFAULT_REASONING_SUMMARY = "none"
 DEFAULT_AGENT_IMAGE = f"canitedit-codex-agent:{DEFAULT_CODEX_VERSION}"
 DEFAULT_TIMEOUT_SEC = 600
-DEFAULT_TEMPERATURE = 0.2
-DEFAULT_TOP_P = 0.95
-DEFAULT_MAX_TOKENS = 3072
 
 InstructionKind = Literal["instruction_descriptive", "instruction_lazy"]
 
@@ -357,10 +354,6 @@ def run_codex_for_item(
             "prompt": "",
             "completions": [completion],
             "language": "py",
-            "temperature": args.temperature,
-            "top_p": args.top_p,
-            "max_tokens": args.max_tokens,
-            "stop_tokens": [],
             "script_args": sanitized_script_args(args),
             "harbor_parity_metadata": {
                 "agent": DEFAULT_AGENT,
@@ -435,9 +428,6 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--task-ids", default=None, help="Comma-separated id/name/full_name filter")
     parser.add_argument("--limit", type=int, default=None)
     parser.add_argument("--timeout-sec", type=int, default=DEFAULT_TIMEOUT_SEC)
-    parser.add_argument("--temperature", type=float, default=DEFAULT_TEMPERATURE)
-    parser.add_argument("--top-p", type=float, default=DEFAULT_TOP_P)
-    parser.add_argument("--max-tokens", type=int, default=DEFAULT_MAX_TOKENS)
     parser.add_argument("--overwrite", action="store_true")
     parser.add_argument("--keep-workspaces", action="store_true")
     parser.add_argument(
