@@ -161,8 +161,19 @@ def build_official_prompt(item: TaskItem) -> str:
     )
 
 
+def render_writeback_template(template: str, replacements: dict[str, str]) -> str:
+    def replace_match(match: re.Match[str]) -> str:
+        key = match.group(1)
+        return replacements.get(key, match.group(0))
+
+    return re.sub(r"\{([A-Za-z_][A-Za-z0-9_]*)\}", replace_match, template)
+
+
 def build_codex_instruction(item: TaskItem) -> str:
-    return CODEX_WRITEBACK_TEMPLATE.format(official_prompt=build_official_prompt(item))
+    return render_writeback_template(
+        CODEX_WRITEBACK_TEMPLATE,
+        {"official_prompt": build_official_prompt(item)},
+    )
 
 
 def run_command(
