@@ -1,6 +1,6 @@
 # CanItEdit Harbor Parity Runner
 
-This directory adds an original-side Harbor parity runner for CanItEdit. It does **not** change the official CanItEdit dataset or evaluator. It only adds a Codex CLI execution path so the original benchmark can be compared fairly with the Harbor adapter.
+This directory adds an original-side Harbor parity runner for CanItEdit. It does **not** change the official CanItEdit dataset or evaluator. It only adds a Codex CLI execution path so CanItEdit can be compared fairly with the Harbor adapter.
 
 ## Parity setting
 
@@ -29,10 +29,10 @@ codex exec \
   --enable unified_exec \
   -c model_reasoning_effort=low \
   -c model_reasoning_summary=none \
-  -- "<official-direct-prompt-plus-writeback-wrapper>"
+  -- "<direct-edit-prompt-plus-writeback-instruction>"
 ```
 
-The inner CanItEdit prompt is the original direct-edit prompt from `benchmark/generate_completions.py` (`DirectEditModel.format_prompt`). The only Codex-specific addition is a writeback wrapper that tells the agent to put the edited code in `/workspace/solution.py` instead of returning it in chat. The complete Codex instruction must match the Harbor adapter instruction.
+The task content is the direct-edit prompt from `benchmark/generate_completions.py` (`DirectEditModel.format_prompt`). The only Codex-specific addition is a neutral writeback instruction that tells the agent to put the edited code in `/workspace/solution.py` instead of returning it in chat. The complete Codex instruction must match the Harbor adapter instruction.
 
 ## Isolation model
 
